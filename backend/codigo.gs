@@ -17,6 +17,17 @@ function getFecha() {
   return Utilities.formatDate(new Date(), TZ, 'yyyy-MM-dd');
 }
 
+/**
+ * Convierte un valor de celda de Sheets a string "yyyy-MM-dd".
+ * Google Sheets convierte automáticamente "2026-05-27" a un objeto Date,
+ * así que hay que revertirlo al comparar fechas.
+ */
+function toFechaStr(val) {
+  if (!val) return '';
+  if (val instanceof Date) return Utilities.formatDate(val, TZ, 'yyyy-MM-dd');
+  return String(val);
+}
+
 /** Obtiene (o crea) una hoja por nombre y agrega encabezados si está vacía */
 function getHoja(nombre) {
   const ss    = SpreadsheetApp.getActiveSpreadsheet();
@@ -94,7 +105,7 @@ function leerPedidos(fecha) {
 
   for (let i = 1; i < filas.length; i++) {
     const f = filas[i];
-    if (f[0] !== fecha) continue;
+    if (toFechaStr(f[0]) !== fecha) continue;
 
     pedidos.push({
       nombre:   String(f[1]),
@@ -139,7 +150,7 @@ function guardarPedido(fecha, pedido) {
 
     // Buscar si ya existe un pedido del mismo nombre hoy → actualizar
     for (let i = 1; i < filas.length; i++) {
-      if (filas[i][0] === fecha &&
+      if (toFechaStr(filas[i][0]) === fecha &&
           String(filas[i][1]).toLowerCase() === String(pedido.nombre).toLowerCase()) {
         hoja.getRange(i + 1, 1, 1, fila.length).setValues([fila]);
         return;
@@ -156,7 +167,7 @@ function borrarPedido(fecha, nombre) {
   const hoja  = getHoja(HOJA_PEDIDOS);
   const filas = hoja.getDataRange().getValues();
   for (let i = filas.length - 1; i >= 1; i--) {
-    if (filas[i][0] === fecha &&
+    if (toFechaStr(filas[i][0]) === fecha &&
         String(filas[i][1]).toLowerCase() === String(nombre).toLowerCase()) {
       hoja.deleteRow(i + 1);
       return;
@@ -170,7 +181,7 @@ function leerPlatilloDelDia(fecha) {
   const hoja  = getHoja(HOJA_DIA);
   const filas = hoja.getDataRange().getValues();
   for (let i = 1; i < filas.length; i++) {
-    if (filas[i][0] === fecha) return { nombre: String(filas[i][1]) };
+    if (toFechaStr(filas[i][0]) === fecha) return { nombre: String(filas[i][1]) };
   }
   return null;
 }
@@ -180,7 +191,7 @@ function guardarPlatilloDia(fecha, nombre) {
   const filas = hoja.getDataRange().getValues();
   const fila  = [fecha, nombre.trim(), new Date().toISOString()];
   for (let i = 1; i < filas.length; i++) {
-    if (filas[i][0] === fecha) {
+    if (toFechaStr(filas[i][0]) === fecha) {
       hoja.getRange(i + 1, 1, 1, 3).setValues([fila]);
       return;
     }
@@ -192,7 +203,7 @@ function borrarPlatilloDia(fecha) {
   const hoja  = getHoja(HOJA_DIA);
   const filas = hoja.getDataRange().getValues();
   for (let i = filas.length - 1; i >= 1; i--) {
-    if (filas[i][0] === fecha) { hoja.deleteRow(i + 1); return; }
+    if (toFechaStr(filas[i][0]) === fecha) { hoja.deleteRow(i + 1); return; }
   }
 }
 
@@ -202,7 +213,7 @@ function borrarTodoDia(fecha) {
   const hojaPed = getHoja(HOJA_PEDIDOS);
   const filasPed = hojaPed.getDataRange().getValues();
   for (let i = filasPed.length - 1; i >= 1; i--) {
-    if (filasPed[i][0] === fecha) hojaPed.deleteRow(i + 1);
+    if (toFechaStr(filasPed[i][0]) === fecha) hojaPed.deleteRow(i + 1);
   }
   borrarPlatilloDia(fecha);
 }
