@@ -1,91 +1,121 @@
 // ─────────────────────────────────────────────────────────────
-//  storage.js  —  Capa de datos (localStorage por ahora)
-//  Cuando conectemos el backend, solo cambia este archivo.
+//  storage.js  —  Capa de datos · Google Sheets via Apps Script
 // ─────────────────────────────────────────────────────────────
 
-const Storage = (() => {
-  // Fecha LOCAL (no UTC) — evita que la clave cambie a las 6pm en México
-  const hoy = () => {
-    const d = new Date();
-    const yyyy = d.getFullYear();
-    const mm   = String(d.getMonth() + 1).padStart(2, '0');
-    const dd   = String(d.getDate()).padStart(2, '0');
-    return `${yyyy}-${mm}-${dd}`;
-  };
+// ⚠️  REEMPLAZA esta URL con la de tu Web App después de desplegar
+const API_URL = 'PEGA_AQUI_TU_URL_DE_APPS_SCRIPT';
 
-  const keys = {
-    platillo: () => `qm_platillo_${hoy()}`,
-    pedidos:  () => `qm_pedidos_${hoy()}`,
-    nombre:   () => `qm_nombre`            // persiste entre días
-  };
+// ── Caché local (lecturas síncronas; se actualiza en cada sync) ─
+const _cache = {
+  pedidos:       [],
+  platilloDelDia: null
+};
 
-  return {
-    // ── Platillo del día ─────────────────────────────────────
-    getPlatilloDelDia() {
-      const raw = localStorage.getItem(keys.platillo());
-      return raw ? JSON.parse(raw) : null;
-    },
-    setPlatilloDelDia(nombre) {
-      localStorage.setItem(keys.platillo(), JSON.stringify({
-        nombre: nombre.trim(),
-        ts: Date.now()
-      }));
-    },
-    clearPlatilloDelDia() {
-      localStorage.removeItem(keys.platillo());
-    },
+// ── Comunicación con Apps Script ───────────────────────────────
 
-    // ── Pedidos del día ──────────────────────────────────────
-    getPedidos() {
-      const raw = localStorage.getItem(keys.pedidos());
-      return raw ? JSON.parse(raw) : [];
-    },
-    savePedido(pedido) {
-      const pedidos = this.getPedidos();
-      const idx = pedidos.findIndex(
-        p => p.nombre.toLowerCase() === pedido.nombre.toLowerCase()
-      );
-      const entry = { ...pedido, ts: Date.now() };
-      if (idx >= 0) pedidos[idx] = entry;
-      else pedidos.push(entry);
-      localStorage.setItem(keys.pedidos(), JSON.stringify(pedidos));
-      return entry;
-    },
-    deletePedido(nombre) {
-      const pedidos = this.getPedidos().filter(
-        p => p.nombre.toLowerCase() !== nombre.toLowerCase()
-      );
-      localStorage.setItem(keys.pedidos(), JSON.stringify(pedidos));
-    },
-    getMiPedido(nombre) {
-      if (!nombre) return null;
-      return this.getPedidos().find(
-        p => p.nombre.toLowerCase() === nombre.toLowerCase()
-      ) || null;
-    },
+async function apiGet(action) {
+  const res  = await fetch(`${API_URL}?action=${action}`, { redirect: 'follow' });
+  const data = await res.json();
+  if (!data.ok) throw new Error(data.error || 'Error en API GET ' + action);
+  return data.data;
+}
 
-    // ── Nombre guardado (persiste) ───────────────────────────
-    getNombre: ()  => localStorage.getItem(keys.nombre()) || '',
-    setNombre: (n) => localStorage.setItem(keys.nombre(), n.trim()),
-    clearNombre: ()=> localStorage.removeItem(keys.nombre()),
+async function apiPost(body) {
+  const res  = await fetch(API_URL, {
+    method:  'POST',
+    headers: { 'Content-Type': 'text/plain' },   // evita preflight CORS
+    body:    JSON.stringify(body),
+    redirect: 'follow'
+  });
+  const data = await res.json();
+  if (!data.ok) throw new Error(data.error || 'Error en API POST ' + body.action);
+  return data.data;
+}
 
-    // ── Lock de dispositivo (1 pedido por dispositivo por día) ──
-    // Guarda el nombre con el que este dispositivo ordenó hoy.
-    // Independiente del nombre en el input — no se puede burlar.
-    getDeviceNombre: () => localStorage.getItem(`qm_device_${hoy()}`) || null,
-    setDeviceNombre: (n) => localStorage.setItem(`qm_device_${hoy()}`, n.trim()),
-    clearDeviceNombre: () => localStorage.removeItem(`qm_device_${hoy()}`),
+// ── Helper de fecha local (mismo criterio que antes) ───────────
+function _hoy() {
+  const d    = new Date();
+  const yyyy = d.getFullYear();
+  const mm   = String(d.getMonth() + 1).padStart(2, '0');
+  const dd   = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
 
-    // ── Reset completo (solo para pruebas) ──────────────────
-    // Borra TODAS las claves de la app (cualquier fecha),
-    // así no quedan datos huérfanos de sesiones anteriores.
-    resetDia() {
-      const toRemove = [];
-      for (let i = 0; i < localStorage.length; i++) {
-        const k = localStorage.key(i);
-        if (k && k.startsWith('qm_')) toRemove.push(k);
-      }
-      toRemove.forEach(k => localStorage.removeItem(k));
-    }
-  };
-})();
+// ── API pública ────────────────────────────────────────────────
+const Storage = {
+
+  // ── Sincroniza el caché con el servidor ──────────────────────
+  // Llama esto al iniciar la app y cada 30 s para ver cambios.
+  async sync() {
+    const [pedidos, platilloDelDia] = await Promise.all([
+      apiGet('getPedidos'),
+      apiGet('getPlatilloDelDia')
+    ]);
+    _cache.pedidos        = pedidos;
+    _cache.platilloDelDia = platilloDelDia;
+  },
+
+  // ── Platillo del día ─────────────────────────────────────────
+  // Lectura síncrona (desde caché)
+  getPlatilloDelDia() {
+    return _cache.platilloDelDia;
+  },
+  // Escritura asíncrona
+  async setPlatilloDelDia(nombre) {
+    await apiPost({ action: 'setPlatilloDelDia', nombre: nombre.trim() });
+    _cache.platilloDelDia = { nombre: nombre.trim() };
+  },
+  async clearPlatilloDelDia() {
+    await apiPost({ action: 'clearPlatilloDelDia' });
+    _cache.platilloDelDia = null;
+  },
+
+  // ── Pedidos del día ──────────────────────────────────────────
+  // Lectura síncrona (desde caché)
+  getPedidos() {
+    return _cache.pedidos;
+  },
+  getMiPedido(nombre) {
+    if (!nombre) return null;
+    return _cache.pedidos.find(
+      p => p.nombre.toLowerCase() === nombre.toLowerCase()
+    ) || null;
+  },
+  // Escritura asíncrona
+  async savePedido(pedido) {
+    await apiPost({ action: 'savePedido', pedido });
+    // Actualiza caché localmente sin volver a llamar al servidor
+    const idx = _cache.pedidos.findIndex(
+      p => p.nombre.toLowerCase() === pedido.nombre.toLowerCase()
+    );
+    const entry = { ...pedido, ts: Date.now() };
+    if (idx >= 0) _cache.pedidos[idx] = entry;
+    else          _cache.pedidos.push(entry);
+    return entry;
+  },
+  async deletePedido(nombre) {
+    await apiPost({ action: 'deletePedido', nombre });
+    _cache.pedidos = _cache.pedidos.filter(
+      p => p.nombre.toLowerCase() !== nombre.toLowerCase()
+    );
+  },
+
+  // ── Nombre guardado (localStorage — preferencia del dispositivo) ─
+  getNombre:    ()  => localStorage.getItem('qm_nombre') || '',
+  setNombre:    (n) => localStorage.setItem('qm_nombre', n.trim()),
+  clearNombre:  ()  => localStorage.removeItem('qm_nombre'),
+
+  // ── Lock de dispositivo (localStorage — 1 pedido por día) ────
+  getDeviceNombre:   ()  => localStorage.getItem(`qm_device_${_hoy()}`) || null,
+  setDeviceNombre:   (n) => localStorage.setItem(`qm_device_${_hoy()}`, n.trim()),
+  clearDeviceNombre: ()  => localStorage.removeItem(`qm_device_${_hoy()}`),
+
+  // ── Reset completo (solo para pruebas) ───────────────────────
+  async clearAll() {
+    await apiPost({ action: 'clearAll' });
+    _cache.pedidos        = [];
+    _cache.platilloDelDia = null;
+    // Limpia también el lock local del día
+    localStorage.removeItem(`qm_device_${_hoy()}`);
+  }
+};

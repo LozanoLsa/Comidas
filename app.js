@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────
-//  app.js  —  Lógica del formulario de usuario (index.html)
+//  app.js  —  Lógica del formulario de usuario (pedidos.html)
 // ─────────────────────────────────────────────────────────────
 
 // ── Estado ────────────────────────────────────────────────────
@@ -24,7 +24,7 @@ function showScreen(id) {
 }
 
 function isBeforeOpen() {
-  if (CONFIG.testMode) return false; // desactivado en modo pruebas
+  if (CONFIG.testMode) return false;
   const now = new Date();
   return now.getHours() < CONFIG.apertura.hora ||
     (now.getHours() === CONFIG.apertura.hora &&
@@ -32,7 +32,7 @@ function isBeforeOpen() {
 }
 
 function isPastDeadline() {
-  if (CONFIG.testMode) return false; // ⚠️ desactivado en modo pruebas
+  if (CONFIG.testMode) return false;
   const now = new Date();
   return now.getHours() > CONFIG.deadline.hora ||
     (now.getHours() === CONFIG.deadline.hora &&
@@ -76,20 +76,17 @@ function renderBotones(containerId, items, selectedId, onSelect, disabledIds = [
 function renderForm() {
   const platillos = platillosDelDia();
 
-  // Platillo principal
   renderBotones('grid-platillos', platillos, state.platillo?.id, item => {
     state.platillo = item;
     if (state.planB.platillo?.id === item.id) state.planB.platillo = null;
     renderForm();
   });
 
-  // Guarnición 1
   renderBotones('grid-g1', CONFIG.guarniciones, state.g1?.id, item => {
     state.g1 = item;
     renderForm();
   });
 
-  // Guarnición 2 — permite repetir la misma que G1
   renderBotones(
     'grid-g2',
     CONFIG.guarniciones,
@@ -97,13 +94,11 @@ function renderForm() {
     item => { state.g2 = item; renderForm(); }
   );
 
-  // Bebida opcional — clic en la misma quita la selección
   renderBotones('grid-bebida', CONFIG.bebidas, state.bebida?.id, item => {
     state.bebida = (state.bebida?.id === item.id) ? null : item;
     renderForm();
   });
 
-  // Plan B — platillo (excluye el principal ya elegido)
   const opcionesPlanB = [
     ...platillos,
     { id: 'daigual', nombre: '🤷 Da igual / Lo que haya' }
@@ -116,7 +111,6 @@ function renderForm() {
     state.platillo ? [state.platillo.id] : []
   );
 
-  // Plan B — guarnición de respaldo
   renderBotones(
     'grid-planb-guarnicion',
     [...CONFIG.guarniciones, { id: 'daigual_g', nombre: '🤷 Da igual / Lo que haya' }],
@@ -198,7 +192,13 @@ function buildOrderCard(pedido, containerId) {
 }
 
 // ── Submit ────────────────────────────────────────────────────
-function submitPedido() {
+async function submitPedido() {
+  const btn = $('btn-submit');
+  btn.disabled = true;
+  btn.textContent = '⏳ Enviando…';
+
+  const yaExistia = !!Storage.getMiPedido(state.nombre.trim());
+
   const pedido = {
     nombre:   state.nombre.trim(),
     platillo: state.platillo,
@@ -210,14 +210,20 @@ function submitPedido() {
     tardio:   isPastDeadline()
   };
 
-  Storage.savePedido(pedido);
-  Storage.setNombre(pedido.nombre);
-  Storage.setDeviceNombre(pedido.nombre); // 🔒 lock del dispositivo
+  try {
+    await Storage.savePedido(pedido);
+    Storage.setNombre(pedido.nombre);
+    Storage.setDeviceNombre(pedido.nombre); // 🔒 lock del dispositivo
 
-  const yaExistia = Storage.getMiPedido(pedido.nombre);
-  $('confirm-titulo').textContent = yaExistia ? '✏️ Pedido actualizado' : '✅ ¡Pedido enviado!';
-  buildOrderCard(pedido, 'confirm-card');
-  showScreen('screen-confirm');
+    $('confirm-titulo').textContent = yaExistia ? '✏️ Pedido actualizado' : '✅ ¡Pedido enviado!';
+    buildOrderCard(pedido, 'confirm-card');
+    showScreen('screen-confirm');
+  } catch (err) {
+    btn.disabled = false;
+    actualizarSubmit();
+    alert('❌ No se pudo guardar el pedido.\nRevisa tu conexión e intenta de nuevo.');
+    console.error(err);
+  }
 }
 
 // ── Countdown ─────────────────────────────────────────────────
@@ -260,24 +266,32 @@ function updateChip() {
 function mostrarYaPediste(pedido, dispositivoLocked = false) {
   buildOrderCard(pedido, 'mi-pedido-card');
 
-  // Prellenar nombre correcto aunque el input tenga otro
   state.nombre = pedido.nombre;
   Storage.setNombre(pedido.nombre);
 
-  // "No soy yo" solo aparece si el dispositivo NO ha enviado pedido aún
   $('btn-otra-persona').style.display = dispositivoLocked ? 'none' : '';
 
   showScreen('screen-ya-pediste');
 
-  $('btn-cambiar').onclick = () => {
-    // Borra el pedido anterior pero mantiene el lock: solo puede re-ordenar con el mismo nombre
-    Storage.deletePedido(pedido.nombre);
+  $('btn-cambiar').onclick = async () => {
+    $('btn-cambiar').disabled = true;
+    $('btn-cambiar').textContent = '⏳ Un momento…';
+    try {
+      await Storage.deletePedido(pedido.nombre);
+    } catch (err) {
+      $('btn-cambiar').disabled = false;
+      $('btn-cambiar').textContent = '✏️ Cambiar mi pedido';
+      alert('❌ No se pudo cancelar el pedido. Intenta de nuevo.');
+      return;
+    }
     state.platillo = null;
     state.g1 = null;
     state.g2 = null;
     state.planB = { platillo: null, guarnicion: null };
     state.nombre = pedido.nombre;
     $('input-nombre').value = pedido.nombre;
+    $('btn-cambiar').disabled = false;
+    $('btn-cambiar').textContent = '✏️ Cambiar mi pedido';
     showScreen('screen-form');
     renderForm();
   };
@@ -292,97 +306,79 @@ function mostrarYaPediste(pedido, dispositivoLocked = false) {
 }
 
 // ── Init ──────────────────────────────────────────────────────
-function init() {
-  // Nombre guardado
+async function init() {
+  // Nombre guardado en este dispositivo
   const nombreGuardado = Storage.getNombre();
   if (nombreGuardado) {
     state.nombre = nombreGuardado;
     $('input-nombre').value = nombreGuardado;
   }
 
-  // Nombre → listener
+  // Listeners de UI
   $('input-nombre').addEventListener('input', e => {
     state.nombre = e.target.value;
     actualizarSubmit();
   });
 
-  // Sopa checkbox — marcado = NO quiere sopa
   $('check-sopa').addEventListener('change', e => {
     state.sopa = !e.target.checked;
   });
 
-  // Bebida toggle
   $('bebida-header').addEventListener('click', () => {
     state.bebidaOpen = !state.bebidaOpen;
     $('bebida-body').classList.toggle('open', state.bebidaOpen);
     $('bebida-chevron').classList.toggle('open', state.bebidaOpen);
   });
 
-  // Plan B toggle
   $('plan-b-header').addEventListener('click', () => {
     state.planBOpen = !state.planBOpen;
     $('plan-b-body').classList.toggle('open', state.planBOpen);
     $('plan-b-chevron').classList.toggle('open', state.planBOpen);
   });
 
-  // Submit
   $('btn-submit').addEventListener('click', submitPedido);
 
-  // Countdown
   updateChip();
   setInterval(updateChip, 1000);
 
-  // ── Lógica de pantallas ──
+  // ── Carga inicial desde el servidor ──
+  try {
+    await Storage.sync();
+  } catch (err) {
+    showScreen('screen-error');
+    console.error('Error al conectar con el servidor:', err);
+    return;
+  }
+
   routeScreen(nombreGuardado);
 
-  // Si no hay menú del día, recheck cada 30 s
-  if (!Storage.getPlatilloDelDia()) {
-    const interval = setInterval(() => {
-      if (Storage.getPlatilloDelDia()) {
-        clearInterval(interval);
+  // Refresco automático cada 30 s — actualiza caché y re-evalúa pantalla
+  setInterval(async () => {
+    try {
+      await Storage.sync();
+      // Si estamos en "sin menú" y ahora ya hay menú, avanzar
+      const pantallaActiva = document.querySelector('.screen.active');
+      if (pantallaActiva?.id === 'screen-no-menu' && Storage.getPlatilloDelDia()) {
         routeScreen(Storage.getNombre());
       }
-    }, 30000);
-  }
+    } catch (_) { /* silencioso — no interrumpir al usuario */ }
+  }, 30000);
 }
 
 function routeScreen(nombre) {
-  // 1. Antes de apertura
-  if (isBeforeOpen()) {
-    showScreen('screen-before-open');
-    return;
-  }
+  if (isBeforeOpen()) { showScreen('screen-before-open'); return; }
+  if (isPastDeadline()) { showScreen('screen-closed'); return; }
+  if (!Storage.getPlatilloDelDia()) { showScreen('screen-no-menu'); return; }
 
-  // 2. Cerrado
-  if (isPastDeadline()) {
-    showScreen('screen-closed');
-    return;
-  }
-
-  // 3. Sin menú del día
-  if (!Storage.getPlatilloDelDia()) {
-    showScreen('screen-no-menu');
-    return;
-  }
-
-  // 3. Este dispositivo ya ordenó hoy → mostrar su pedido, sin opción de ser "otra persona"
   const deviceNombre = Storage.getDeviceNombre();
   if (deviceNombre) {
     const pedidoDevice = Storage.getMiPedido(deviceNombre);
-    if (pedidoDevice) {
-      mostrarYaPediste(pedidoDevice, true); // true = ya ordenó, ocultar "No soy yo"
-      return;
-    }
+    if (pedidoDevice) { mostrarYaPediste(pedidoDevice, true); return; }
   }
 
-  // 4. Tiene nombre guardado con pedido (sin lock de dispositivo aún)
   const pedidoExistente = Storage.getMiPedido(nombre);
-  if (pedidoExistente) {
-    mostrarYaPediste(pedidoExistente, false);
-    return;
-  }
+  if (pedidoExistente) { mostrarYaPediste(pedidoExistente, false); return; }
 
-  // 5. Formulario libre
   showScreen('screen-form');
   renderForm();
 }

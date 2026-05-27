@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────
-//  pivote.js  —  Lógica de la vista del pivote (pivote.html)
+//  pivote.js  —  Lógica de la vista del Enlace (pivote.html)
 // ─────────────────────────────────────────────────────────────
 
 const $ = id => document.getElementById(id);
@@ -94,20 +94,17 @@ function generarTextoRestaurante() {
   });
   const fecha = hoy.charAt(0).toUpperCase() + hoy.slice(1);
 
-  // Agrupar por combinación platillo + guarniciones
   const cuentas = {};
   pedidos.forEach(p => {
     const clave = `${p.platillo.nombre} + ${p.g1.nombre} + ${p.g2.nombre}`;
     cuentas[clave] = (cuentas[clave] || 0) + 1;
   });
 
-  // Agrupar bebidas
   const bebidas = {};
   pedidos.forEach(p => {
     if (p.bebida) bebidas[p.bebida.nombre] = (bebidas[p.bebida.nombre] || 0) + 1;
   });
 
-  // Contar sopas (quienes SÍ quieren = no marcaron "sin sopa")
   const conSopaCount = pedidos.filter(p => p.sopa !== false).length;
 
   let txt = `Buenas tardes 🍽️ Pedido ITS — ${fecha}\n\n`;
@@ -130,7 +127,7 @@ function generarTextoRestaurante() {
   return txt;
 }
 
-// ── Texto de REFERENCIA INTERNA (nombres, no se copia) ────────
+// ── Texto de REFERENCIA INTERNA ───────────────────────────────
 function generarTextoInterno() {
   const pedidos = Storage.getPedidos();
   if (pedidos.length === 0) return '— Aún no hay pedidos —';
@@ -144,6 +141,12 @@ function generarTextoInterno() {
 function renderComanda() {
   $('comanda-restaurante').textContent = generarTextoRestaurante();
   $('comanda-interna').textContent     = generarTextoInterno();
+}
+
+function renderTodo() {
+  renderDia();
+  renderPedidos();
+  renderComanda();
 }
 
 // ── Copiar solo el texto del restaurante ──────────────────────
@@ -161,7 +164,6 @@ function copiarComanda() {
       }, 3000);
     });
   } else {
-    // Fallback para navegadores sin clipboard API (file://)
     const ta = document.createElement('textarea');
     ta.value = texto;
     ta.style.position = 'fixed';
@@ -179,43 +181,31 @@ function copiarComanda() {
   }
 }
 
-// ── Render completo ───────────────────────────────────────────
-function renderTodo() {
-  renderDia();
-  renderPedidos();
-  renderComanda();
-}
-
 // ── Init ──────────────────────────────────────────────────────
-function mostrarDebug() {
-  const el = $('debug-panel');
-  if (!el) return;
-  const todas = Object.keys(localStorage);
-  if (todas.length === 0) {
-    el.textContent = '✅ localStorage completamente vacío';
-    el.style.borderColor = '#22c55e';
-    el.style.background  = '#f0fdf4';
-    return;
-  }
-  const lineas = todas.map(k => {
-    const val = localStorage.getItem(k);
-    const preview = val && val.length > 60 ? val.slice(0, 60) + '…' : val;
-    return `  ${k}  =  ${preview}`;
-  });
-  el.textContent = `📦 ${todas.length} clave(s) en localStorage:\n` + lineas.join('\n');
-}
-
-function init() {
-  renderTodo();
-  mostrarDebug();
+async function init() {
   updateChip();
   setInterval(updateChip, 1000);
 
-  // Auto-refresh cada 30 s (simula "tiempo real" en local)
-  setInterval(renderTodo, 30000);
+  // ── Carga inicial desde el servidor ──
+  try {
+    await Storage.sync();
+  } catch (err) {
+    console.error('Error al sincronizar:', err);
+    alert('⚠️ No se pudo conectar al servidor. Revisa tu conexión.');
+  }
+
+  renderTodo();
+
+  // Refresco automático cada 30 s
+  setInterval(async () => {
+    try {
+      await Storage.sync();
+      renderTodo();
+    } catch (_) { /* silencioso */ }
+  }, 30000);
 
   // ── Publicar platillo del día ──
-  const inputDia   = $('input-dia');
+  const inputDia    = $('input-dia');
   const btnPublicar = $('btn-publicar');
 
   inputDia.addEventListener('input', () => {
@@ -227,49 +217,82 @@ function init() {
 
   btnPublicar.addEventListener('click', publicarDia);
 
-  function publicarDia() {
+  async function publicarDia() {
     const nombre = inputDia.value.trim();
     if (!nombre) return;
-    Storage.setPlatilloDelDia(nombre);
-    inputDia.value = '';
     btnPublicar.disabled = true;
-    renderTodo();
+    btnPublicar.textContent = '⏳ Guardando…';
+    try {
+      await Storage.setPlatilloDelDia(nombre);
+      inputDia.value = '';
+      renderTodo();
+    } catch (err) {
+      alert('❌ No se pudo publicar el platillo. Intenta de nuevo.');
+      console.error(err);
+    } finally {
+      btnPublicar.disabled = true;
+      btnPublicar.textContent = '✅ Publicar';
+    }
   }
 
   // ── Editar platillo del día ──
-  $('btn-editar-dia').addEventListener('click', () => {
+  $('btn-editar-dia').addEventListener('click', async () => {
     const pd = Storage.getPlatilloDelDia();
-    Storage.clearPlatilloDelDia();
+    const btnEditar = $('btn-editar-dia');
+    btnEditar.disabled = true;
+    try {
+      await Storage.clearPlatilloDelDia();
+    } catch (err) {
+      alert('❌ No se pudo editar. Intenta de nuevo.');
+      btnEditar.disabled = false;
+      return;
+    }
     $('input-dia').value = pd?.nombre || '';
     $('btn-publicar').disabled = false;
     renderTodo();
     $('input-dia').focus();
+    btnEditar.disabled = false;
   });
 
   // ── Refresh manual ──
-  $('btn-refresh').addEventListener('click', () => {
-    renderTodo();
+  $('btn-refresh').addEventListener('click', async () => {
     const btn = $('btn-refresh');
-    btn.textContent = '✓ Actualizado';
-    setTimeout(() => { btn.textContent = '↻ Actualizar'; }, 1500);
+    btn.textContent = '⏳ Actualizando…';
+    btn.disabled = true;
+    try {
+      await Storage.sync();
+      renderTodo();
+      btn.textContent = '✓ Actualizado';
+    } catch (_) {
+      btn.textContent = '❌ Sin conexión';
+    }
+    setTimeout(() => {
+      btn.textContent = '↻ Actualizar';
+      btn.disabled = false;
+    }, 1500);
   });
 
   // ── Copiar comanda ──
   $('btn-copy').addEventListener('click', copiarComanda);
 
-  // ── Reset del día (pruebas) ──────────────────────────────
-  $('btn-reset').addEventListener('click', () => {
-    // Recolecta primero, luego borra (evita problemas de índice)
-    const aBorrar = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const k = localStorage.key(i);
-      if (k !== null) aBorrar.push(k); // borra TODO para pruebas
+  // ── Reset del día (pruebas) ──
+  $('btn-reset').addEventListener('click', async () => {
+    const btn = $('btn-reset');
+    btn.disabled = true;
+    btn.textContent = '⏳ Limpiando…';
+    try {
+      await Storage.clearAll();
+      renderTodo();
+      btn.textContent = '✅ Limpio';
+    } catch (err) {
+      alert('❌ No se pudo limpiar. Intenta de nuevo.');
+      console.error(err);
+      btn.textContent = '🗑️ Reset del día';
     }
-    aBorrar.forEach(k => localStorage.removeItem(k));
-    // Actualiza UI y debug sin recargar
-    mostrarDebug();
-    renderTodo();
-    $('btn-reset').textContent = '✅ Limpio — recarga la página si quieres empezar de cero';
+    setTimeout(() => {
+      btn.disabled = false;
+      btn.textContent = '🗑️ Reset del día';
+    }, 2000);
   });
 }
 
