@@ -80,23 +80,6 @@ function doGet(e) {
     if (action === 'getPedidos')        return json({ ok: true, data: leerPedidos(fecha) });
     if (action === 'getPlatilloDelDia') return json({ ok: true, data: leerPlatilloDelDia(fecha) });
     if (action === 'ping')              return json({ ok: true, data: 'pong' });
-    if (action === 'debug') {
-      const hoja  = getHoja(HOJA_DIA);
-      const filas = hoja.getDataRange().getValues();
-      const tz    = getTZ();
-      return json({ ok: true, data: {
-        hoy:   fecha,
-        tz:    tz,
-        filas: filas.map((f, i) => ({
-          i,
-          raw:       String(f[0]),
-          esDate:    f[0] instanceof Date,
-          convertido: toFechaStr(f[0]),
-          coincide:  toFechaStr(f[0]) === fecha,
-          nombre:    String(f[1])
-        }))
-      }});
-    }
     return json({ ok: false, error: 'Accion no reconocida: ' + action });
   } catch (err) {
     return json({ ok: false, error: err.toString() });
