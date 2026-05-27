@@ -9,6 +9,7 @@ const state = {
   g1:        null,
   g2:        null,
   bebida:    null,
+  sopa:      true,   // true = con sopa (default), false = sin sopa
   planB: { platillo: null, guarnicion: null },
   planBOpen:   false,
   bebidaOpen:  false
@@ -172,6 +173,12 @@ function buildOrderCard(pedido, containerId) {
       <span class="order-row-label">Guarniciones</span>
       <span class="order-row-val">${pedido.g1.nombre} + ${pedido.g2.nombre}</span>
     </div>
+    <hr class="order-divider">
+    <div class="order-row">
+      <span class="order-row-icon">🍲</span>
+      <span class="order-row-label">Sopa</span>
+      <span class="order-row-val" style="${pedido.sopa ? '' : 'color:#ef4444'}">${pedido.sopa ? 'Con sopa ✅' : 'Sin sopa ❌'}</span>
+    </div>
     ${pedido.bebida ? `
     <hr class="order-divider">
     <div class="order-row">
@@ -197,6 +204,7 @@ function submitPedido() {
     g1:       state.g1,
     g2:       state.g2,
     bebida:   state.bebida || null,
+    sopa:     state.sopa,
     planB:    state.planB,
     tardio:   isPastDeadline()
   };
@@ -295,6 +303,11 @@ function init() {
   $('input-nombre').addEventListener('input', e => {
     state.nombre = e.target.value;
     actualizarSubmit();
+  });
+
+  // Sopa checkbox
+  $('check-sopa').addEventListener('change', e => {
+    state.sopa = e.target.checked;
   });
 
   // Bebida toggle

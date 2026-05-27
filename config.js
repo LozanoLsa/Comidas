@@ -23,7 +23,8 @@ const CONFIG = {
     { id: "chiles_queso",      nombre: "Chiles Rellenos Queso",  precio: 120 },
     { id: "enchiladas_suizas", nombre: "Enchiladas Suizas",   precio: 120 },
     { id: "entomatadas",       nombre: "Entomatadas",         precio: 120 },
-    { id: "asado_picadillo",   nombre: "Asado / Picadillo",   precio: 120 }
+    { id: "asado_picadillo",   nombre: "Asado / Picadillo",   precio: 120 },
+    { id: "pollo_plancha",     nombre: "Pollo a la Plancha",  precio: 120 }
   ],
 
   guarniciones: [

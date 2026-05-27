@@ -75,6 +75,7 @@ function renderPedidos() {
           <div class="pedido-nombre">${p.nombre}</div>
           <div class="pedido-platillo">${p.platillo.nombre}</div>
           <div class="pedido-guarns">${p.g1.nombre} + ${p.g2.nombre}</div>
+          ${p.sopa === false ? `<div class="pedido-planb" style="color:#ef4444">🍲 Sin sopa</div>` : ''}
           ${p.bebida ? `<div class="pedido-planb">🥤 ${p.bebida.nombre}</div>` : ''}
           ${planBTxt ? `<div class="pedido-planb">${planBTxt}</div>` : ''}
         </div>
@@ -94,10 +95,11 @@ function generarTextoRestaurante() {
   });
   const fecha = hoy.charAt(0).toUpperCase() + hoy.slice(1);
 
-  // Agrupar platillos por combinación completa
+  // Agrupar platillos por combinación completa (incluyendo sopa)
   const cuentas = {};
   pedidos.forEach(p => {
-    const clave = `${p.platillo.nombre} + ${p.g1.nombre} + ${p.g2.nombre}`;
+    const sinSopa = p.sopa === false ? ' (sin sopa)' : '';
+    const clave = `${p.platillo.nombre} + ${p.g1.nombre} + ${p.g2.nombre}${sinSopa}`;
     cuentas[clave] = (cuentas[clave] || 0) + 1;
   });
 
@@ -131,7 +133,7 @@ function generarTextoInterno() {
   if (pedidos.length === 0) return '— Aún no hay pedidos —';
 
   return pedidos.map((p, i) =>
-    `${i + 1}. ${p.nombre}\n   ${p.platillo.nombre} + ${p.g1.nombre} + ${p.g2.nombre}${p.bebida ? `\n   🥤 ${p.bebida.nombre}` : ''}`
+    `${i + 1}. ${p.nombre}\n   ${p.platillo.nombre} + ${p.g1.nombre} + ${p.g2.nombre}${p.sopa === false ? '\n   🍲 Sin sopa' : ''}${p.bebida ? `\n   🥤 ${p.bebida.nombre}` : ''}`
   ).join('\n');
 }
 
