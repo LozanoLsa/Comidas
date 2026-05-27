@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pedidos — ITS Metrology Solutions</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .sidebar-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,.35); z-index: 100;
+    }
+    .sidebar-overlay.open { display: block; }
+    .sidebar {
+      position: fixed; top: 0; right: 0;
+      width: min(360px, 92vw); height: 100%;
+      background: #fff;
+      box-shadow: -4px 0 24px rgba(0,0,0,.15);
+      z-index: 101;
+      transform: translateX(100%);
+      transition: transform .28s ease;
+      display: flex; flex-direction: column;
+    }
+    .sidebar.open { transform: translateX(0); }
+    .sidebar-header {
+      display: flex; align-items: center;
+      justify-content: space-between;
+      padding: 18px 20px 14px;
+      border-bottom: 3px solid var(--color-rojo);
+      background: var(--color-negro); color: #fff;
+      flex-shrink: 0;
+    }
+    .sidebar-header h3 { margin: 0; font-size: 15px; font-weight: 700; }
+    .sidebar-close {
+      background: none; border: none; color: #fff;
+      font-size: 22px; cursor: pointer; line-height: 1; padding: 0 2px;
+    }
+    .sidebar-close:hover { color: var(--color-rojo); }
+    .sidebar-body { flex: 1; overflow-y: auto; padding: 20px; }
+    .info-bloque {
+      margin-bottom: 20px; padding-bottom: 20px;
+      border-bottom: 1px solid #eee;
+    }
+    .info-bloque:last-child { border-bottom: none; margin-bottom: 0; }
+    .info-bloque h4 {
+      margin: 0 0 8px; font-size: 13px; font-weight: 700;
+      color: var(--color-negro); display: flex; align-items: center; gap: 6px;
+    }
+    .info-bloque p, .info-bloque li {
+      font-size: 13px; color: #555; line-height: 1.65; margin: 0 0 4px;
+    }
+    .info-bloque ol, .info-bloque ul { margin: 6px 0 0; padding-left: 18px; }
+    .info-bloque li { margin-bottom: 4px; }
+    .info-highlight { font-weight: 700; color: var(--color-rojo); }
+    .btn-info {
+      background: rgba(255,255,255,.15);
+      border: 1px solid rgba(255,255,255,.3);
+      color: #fff; border-radius: 20px;
+      padding: 5px 13px; font-size: 12px;
+      font-family: inherit; font-weight: 600;
+      cursor: pointer; display: flex; align-items: center;
+      gap: 5px; white-space: nowrap; transition: background .2s;
+    }
+    .btn-info:hover { background: rgba(255,255,255,.25); }
+  </style>
+</head>
+<body>
+
+<!-- ── OVERLAY + SIDEBAR ─────────────────────────────────────── -->
+<div class="sidebar-overlay" id="sidebar-overlay"></div>
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <h3>🎲 Cómo hacer tu pedido</h3>
+    <button class="sidebar-close" id="sidebar-close" aria-label="Cerrar">✕</button>
+  </div>
+  <div class="sidebar-body">
+
+    <div class="info-bloque" style="background:#fff8f0;border-radius:8px;padding:12px 14px;border:none;margin-bottom:16px">
+      <p style="font-size:12px;color:#888;margin:0 0 4px;font-weight:700;letter-spacing:.05em">BIENVENIDO A</p>
+      <p style="font-size:16px;font-weight:800;color:#202020;margin:0">🍽️ Quiero Más+ · ITS Edition</p>
+      <p style="font-size:12px;color:#888;margin:4px 0 0">Tu comida, sin rollos, sin WhatsApps.<br>Lunes a Viernes · 1 pedido por día</p>
+    </div>
+
+    <div class="info-bloque">
+      <h4>⏱️ Horario</h4>
+      <p>La ventana de pedidos está abierta de:</p>
+      <p style="font-size:15px;font-weight:800;color:#202020;margin:6px 0">🌅 10:00 AM → 🔒 12:30 PM</p>
+      <p>Fuera de ese horario la app se bloquea sola. Sin excepciones.</p>
+    </div>
+
+    <div class="info-bloque">
+      <h4>🃏 Tu turno — cómo pedir</h4>
+      <ol>
+        <li>Escribe <strong>tu nombre</strong>.</li>
+        <li>Elige tu <strong>platillo</strong>.</li>
+        <li>Elige tus <strong>2 guarniciones</strong> (no pueden repetirse).</li>
+        <li>¿Tienes Plan B? Despliégalo y deja tu respaldo.</li>
+        <li>Toca <strong>"¡Enviar mi pedido!"</strong> — listo. ✅</li>
+      </ol>
+    </div>
+
+    <div class="info-bloque">
+      <h4>✏️ ¿Cambiaste de opinión?</h4>
+      <p>Puedes editar tu pedido cuantas veces quieras <strong>antes de las 12:30 PM</strong>. Después de esa hora ya no hay cambios.</p>
+    </div>
+
+    <div class="info-bloque">
+      <h4>🔒 Una persona, un dispositivo</h4>
+      <p>Cada celular o compu solo registra <strong>un pedido por día</strong>. Si necesitas cambiar algo, usa el botón <strong>"✏️ Cambiar mi pedido"</strong> en vez de abrir desde otro dispositivo.</p>
+    </div>
+
+    <div class="info-bloque">
+      <h4>🔄 Plan B (opcional pero recomendado)</h4>
+      <p>Deja una segunda opción por si no hay tu platillo o guarnición.</p>
+      <p style="margin-top:6px">El Enlace lo consulta <strong>sin necesidad de contactarte</strong> — tú no te enteras de nada y tu comida llega igual. 😄</p>
+    </div>
+
+    <div class="info-bloque">
+      <h4>🏆 ¿Qué pasa después?</h4>
+      <p>El Enlace del día envía todos los pedidos al restaurante a las 12:30 PM por WhatsApp. Tu comida llega entre <strong>12:00 y 3:00 PM</strong>.</p>
+    </div>
+
+    <div class="info-bloque">
+      <h4>🍽️ Restaurante</h4>
+      <p><strong>Quiero Más+</strong> — Lo de la Tarde</p>
+    </div>
+
+  </div>
+</aside>
+
+<!-- ── HEADER ──────────────────────────────────────────────── -->
+<header class="site-header">
+  <div class="header-logo">
+    <img src="img/logo_oficial.jpeg" alt="ITS" />
+    <div class="header-logo-text">
+      <strong>Innovative Technology Solutions</strong>
+      <span>Sistema de Pedidos</span>
+    </div>
+  </div>
+  <div class="header-right">
+    <button class="btn-info" id="btn-info">ℹ️ Instrucciones</button>
+    <div class="deadline-chip" id="deadline-chip">⏰ 12:30 PM</div>
+  </div>
+</header>
+
+<!-- ── CONTENIDO PRINCIPAL ─────────────────────────────────── -->
+<main class="site-main">
+
+  <h1 class="page-title">🍽️ Pedido del día</h1>
+  <p class="page-subtitle">Quiero Más+ · Lo de la Tarde · Cierra a las 12:30 PM</p>
+
+  <!-- ── PANTALLA: cargando ── -->
+  <div class="screen active" id="screen-loading">
+    <div class="state-card">
+      <span class="emoji">⏳</span>
+      <h2>Cargando…</h2>
+    </div>
+  </div>
+
+  <!-- ── PANTALLA: antes de apertura ── -->
+  <div class="screen" id="screen-before-open">
+    <div class="state-card">
+      <span class="emoji">🌅</span>
+      <h2>Aún no es hora</h2>
+      <p>Los pedidos abren a las <strong>10:00 AM</strong>.<br>Regresa en un momento.</p>
+    </div>
+  </div>
+
+  <!-- ── PANTALLA: sin menú del día ── -->
+  <div class="screen" id="screen-no-menu">
+    <div class="state-card">
+      <span class="emoji">🕐</span>
+      <h2>El menú de hoy no está listo</h2>
+      <p>El Enlace publicará el platillo del día en breve.<br>Esta pantalla se actualiza automáticamente.</p>
+    </div>
+  </div>
+
+  <!-- ── PANTALLA: ya pediste ── -->
+  <div class="screen" id="screen-ya-pediste">
+    <div class="state-card">
+      <span class="emoji">✅</span>
+      <h2>¡Ya tienes pedido!</h2>
+      <div class="order-card" id="mi-pedido-card"></div>
+      <div class="btn-group">
+        <button class="btn-secondary" id="btn-cambiar">✏️ Cambiar mi pedido</button>
+        <button class="btn-secondary" id="btn-otra-persona">👤 No soy yo</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PANTALLA: cerrado ── -->
+  <div class="screen" id="screen-closed">
+    <div class="state-card">
+      <span class="emoji">🔒</span>
+      <h2>Pedidos cerrados</h2>
+      <p>La ventana cerró a las 12:30 PM.<br>Revisa con el Enlace si alcanzaste.</p>
+    </div>
+  </div>
+
+  <!-- ── PANTALLA: formulario ── -->
+  <div class="screen" id="screen-form">
+
+    <!-- Nombre -->
+    <div class="block">
+      <div class="section-title">¿Quién eres?</div>
+      <input
+        type="text"
+        id="input-nombre"
+        class="nombre-input"
+        placeholder="Escribe tu nombre"
+        autocomplete="off"
+        maxlength="30"
+      />
+    </div>
+
+    <!-- Platillo principal -->
+    <div class="block">
+      <div class="section-title">¿Qué quieres hoy?</div>
+      <div class="options-grid" id="grid-platillos"></div>
+    </div>
+
+    <!-- Guarniciones -->
+    <div class="block">
+      <div class="section-title">Guarniciones</div>
+      <label class="section-label">Primera guarnición</label>
+      <div class="options-grid garnish-grid" id="grid-g1" style="margin-bottom:16px"></div>
+      <label class="section-label">Segunda guarnición</label>
+      <div class="options-grid garnish-grid" id="grid-g2"></div>
+    </div>
+
+    <!-- Bebida opcional -->
+    <div class="block" style="padding:0">
+      <div class="plan-b-wrap">
+        <div class="plan-b-header" id="bebida-header">
+          <span class="plan-b-title">🥤 ¿Quieres algo de tomar?</span>
+          <span class="badge-opcional">opcional</span>
+          <span class="plan-b-chevron" id="bebida-chevron">▼</span>
+        </div>
+        <div class="plan-b-body" id="bebida-body">
+          <p class="plan-b-hint">Selecciona una bebida si quieres incluirla. Toca de nuevo para quitar.</p>
+          <div class="options-grid garnish-grid" id="grid-bebida"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Plan B -->
+    <div class="block" style="padding:0">
+      <div class="plan-b-wrap">
+        <div class="plan-b-header" id="plan-b-header">
+          <span class="plan-b-title">🔄 ¿Tienes un Plan B?</span>
+          <span class="badge-opcional">opcional</span>
+          <span class="plan-b-chevron" id="plan-b-chevron">▼</span>
+        </div>
+        <div class="plan-b-body" id="plan-b-body">
+          <p class="plan-b-hint">
+            Si no hay tu platillo o guarnición, usamos esto automáticamente sin necesidad de contactarte.
+          </p>
+          <span class="section-label-sm">Platillo alternativo</span>
+          <div class="options-grid" id="grid-planb-platillo"></div>
+          <span class="section-label-sm">Guarnición de respaldo</span>
+          <div class="options-grid garnish-grid" id="grid-planb-guarnicion"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Submit -->
+    <button class="btn-submit" id="btn-submit" disabled>
+      Selecciona tu pedido completo
+    </button>
+
+  </div><!-- /screen-form -->
+
+  <!-- ── PANTALLA: confirmación ── -->
+  <div class="screen" id="screen-confirm">
+    <div class="state-card">
+      <span class="emoji">✅</span>
+      <h2 id="confirm-titulo">¡Pedido enviado!</h2>
+      <div class="order-card" id="confirm-card"></div>
+      <p class="confirm-note">Recibirás aviso si algo no está disponible.</p>
+    </div>
+  </div>
+
+</main>
+
+<!-- ── FOOTER ───────────────────────────────────────────────── -->
+<footer class="site-footer">
+  ITS Metrology Solutions &nbsp;·&nbsp; Innovative Technology Solutions &nbsp;·&nbsp; ventas@it-s.mx
+</footer>
+
+<script src="config.js"></script>
+<script src="storage.js"></script>
+<script src="app.js"></script>
+<script>
+  const sidebar  = document.getElementById('sidebar');
+  const overlay  = document.getElementById('sidebar-overlay');
+  const btnInfo  = document.getElementById('btn-info');
+  const btnClose = document.getElementById('sidebar-close');
+  function openSidebar()  { sidebar.classList.add('open'); overlay.classList.add('open'); }
+  function closeSidebar() { sidebar.classList.remove('open'); overlay.classList.remove('open'); }
+  btnInfo.addEventListener('click', openSidebar);
+  btnClose.addEventListener('click', closeSidebar);
+  overlay.addEventListener('click', closeSidebar);
+</script>
+</body>
+</html>
