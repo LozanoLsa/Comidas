@@ -173,12 +173,13 @@ function buildOrderCard(pedido, containerId) {
       <span class="order-row-label">Guarniciones</span>
       <span class="order-row-val">${pedido.g1.nombre} + ${pedido.g2.nombre}</span>
     </div>
+    ${pedido.sopa === false ? `
     <hr class="order-divider">
     <div class="order-row">
       <span class="order-row-icon">🍲</span>
       <span class="order-row-label">Sopa</span>
-      <span class="order-row-val" style="${pedido.sopa ? '' : 'color:#ef4444'}">${pedido.sopa ? 'Con sopa ✅' : 'Sin sopa ❌'}</span>
-    </div>
+      <span class="order-row-val" style="color:#ef4444">Sin sopa ❌</span>
+    </div>` : ''}
     ${pedido.bebida ? `
     <hr class="order-divider">
     <div class="order-row">
@@ -305,9 +306,9 @@ function init() {
     actualizarSubmit();
   });
 
-  // Sopa checkbox
+  // Sopa checkbox — marcado = NO quiere sopa
   $('check-sopa').addEventListener('change', e => {
-    state.sopa = e.target.checked;
+    state.sopa = !e.target.checked;
   });
 
   // Bebida toggle

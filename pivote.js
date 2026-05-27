@@ -107,8 +107,8 @@ function generarTextoRestaurante() {
     if (p.bebida) bebidas[p.bebida.nombre] = (bebidas[p.bebida.nombre] || 0) + 1;
   });
 
-  // Contar sin sopa
-  const sinSopaCount = pedidos.filter(p => p.sopa === false).length;
+  // Contar sopas (quienes SÍ quieren = no marcaron "sin sopa")
+  const conSopaCount = pedidos.filter(p => p.sopa !== false).length;
 
   let txt = `Buenas tardes 🍽️ Pedido ITS — ${fecha}\n\n`;
 
@@ -123,10 +123,7 @@ function generarTextoRestaurante() {
     txt += `🔺 Bebidas: ${bebTxt}\n`;
   }
 
-  if (sinSopaCount > 0) {
-    txt += `🔺 Sin sopa: ${sinSopaCount}\n`;
-  }
-
+  txt += `🔺 Sopas: ${conSopaCount}\n`;
   txt += `🔺 Hora: ${CONFIG.horaEntrega || '1:45'}\n`;
   txt += `\nMuchas gracias, que tengan excelente día! 🙏`;
 
