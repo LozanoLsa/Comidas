@@ -149,6 +149,29 @@ function renderTodo() {
   renderComanda();
 }
 
+// ── Panel de estado de sincronización ─────────────────────────
+function updateSyncStatus() {
+  const panel = $('debug-panel');
+  if (!panel) return;
+
+  const now  = new Date();
+  const hh   = now.getHours();
+  const mm   = String(now.getMinutes()).padStart(2, '0');
+  const ss   = String(now.getSeconds()).padStart(2, '0');
+  const ampm = hh >= 12 ? 'PM' : 'AM';
+  const h12  = hh % 12 || 12;
+  const hora = `${h12}:${mm}:${ss} ${ampm}`;
+
+  const pedidos = Storage.getPedidos();
+  const pd      = Storage.getPlatilloDelDia();
+
+  const pedidosTxt  = pedidos.length === 1 ? '1 pedido' : `${pedidos.length} pedidos`;
+  const platilloTxt = pd ? `🍲 ${pd.nombre}` : '📭 Sin platillo publicado';
+
+  panel.textContent = `🔄 Última sync: ${hora}  ·  ${pedidosTxt}  ·  ${platilloTxt}`;
+  panel.style.display = 'block';
+}
+
 // ── Copiar solo el texto del restaurante ──────────────────────
 function copiarComanda() {
   const texto = generarTextoRestaurante();
@@ -189,6 +212,7 @@ async function init() {
   // ── Carga inicial desde el servidor ──
   try {
     await Storage.sync();
+    updateSyncStatus();
   } catch (err) {
     console.error('Error al sincronizar:', err);
     alert('⚠️ No se pudo conectar al servidor. Revisa tu conexión.');
@@ -201,6 +225,7 @@ async function init() {
     try {
       await Storage.sync();
       renderTodo();
+      updateSyncStatus();
     } catch (_) { /* silencioso */ }
   }, 30000);
 
@@ -300,6 +325,7 @@ async function init() {
     try {
       await Storage.sync();
       renderTodo();
+      updateSyncStatus();
       btn.textContent = '✓ Actualizado';
     } catch (_) {
       btn.textContent = '❌ Sin conexión';
