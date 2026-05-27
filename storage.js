@@ -3,7 +3,7 @@
 // ─────────────────────────────────────────────────────────────
 
 // ⚠️  REEMPLAZA esta URL con la de tu Web App después de desplegar
-const API_URL = 'PEGA_AQUI_TU_URL_DE_APPS_SCRIPT';
+const API_URL = 'https://script.google.com/macros/s/AKfycbzyj_VRcHKaiM3_Pp_aDZwHfOYFgXK6uLkZlf5R00XESL3mhAsi-bH4AuPxShJvmBQN/exec';
 
 // ── Caché local (lecturas síncronas; se actualiza en cada sync) ─
 const _cache = {
