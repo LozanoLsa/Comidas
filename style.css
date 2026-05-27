@@ -639,6 +639,23 @@ img { max-width: 100%; display: block; }
 }
 .btn-reset:hover { opacity: 1; }
 
+.btn-clear-link {
+  display: inline-block;
+  background: transparent;
+  border: 1px solid #6b7280;
+  border-radius: var(--radio);
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 7px 14px;
+  cursor: pointer;
+  font-family: var(--fuente);
+  opacity: 0.65;
+  transition: var(--transicion);
+  text-decoration: none;
+}
+.btn-clear-link:hover { opacity: 1; color: #374151; border-color: #374151; }
+
 /* ── FOOTER ──────────────────────────────────────────────── */
 .site-footer {
   background-color: var(--color-negro);
