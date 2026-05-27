@@ -274,26 +274,6 @@ async function init() {
 
   // ── Copiar comanda ──
   $('btn-copy').addEventListener('click', copiarComanda);
-
-  // ── Reset del día (pruebas) ──
-  $('btn-reset').addEventListener('click', async () => {
-    const btn = $('btn-reset');
-    btn.disabled = true;
-    btn.textContent = '⏳ Limpiando…';
-    try {
-      await Storage.clearAll();
-      renderTodo();
-      btn.textContent = '✅ Limpio';
-    } catch (err) {
-      alert('❌ No se pudo limpiar. Intenta de nuevo.');
-      console.error(err);
-      btn.textContent = '🗑️ Reset del día';
-    }
-    setTimeout(() => {
-      btn.disabled = false;
-      btn.textContent = '🗑️ Reset del día';
-    }, 2000);
-  });
 }
 
 document.addEventListener('DOMContentLoaded', init);
