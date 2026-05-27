@@ -3,8 +3,10 @@
 //  Pega TODO este archivo en tu proyecto de Apps Script
 // ═══════════════════════════════════════════════════════════════
 
-// Zona horaria del negocio (usada para calcular la fecha del día)
-const TZ = 'America/Monterrey';
+// Zona horaria: se toma de la hoja para garantizar consistencia absoluta
+function getTZ() {
+  return SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone();
+}
 
 // Nombres de las hojas dentro del Google Sheet
 const HOJA_PEDIDOS = 'pedidos';
@@ -14,17 +16,17 @@ const HOJA_DIA     = 'platillo_dia';
 
 /** Devuelve la fecha local de hoy como "yyyy-MM-dd" */
 function getFecha() {
-  return Utilities.formatDate(new Date(), TZ, 'yyyy-MM-dd');
+  return Utilities.formatDate(new Date(), getTZ(), 'yyyy-MM-dd');
 }
 
 /**
- * Convierte un valor de celda de Sheets a string "yyyy-MM-dd".
- * Google Sheets convierte automáticamente "2026-05-27" a un objeto Date,
- * así que hay que revertirlo al comparar fechas.
+ * Convierte un valor de celda a string "yyyy-MM-dd".
+ * Google Sheets auto-convierte "2026-05-27" a objeto Date con número de serie.
+ * Usamos la zona horaria DE LA MISMA HOJA para garantizar que coincida.
  */
 function toFechaStr(val) {
-  if (!val) return '';
-  if (val instanceof Date) return Utilities.formatDate(val, TZ, 'yyyy-MM-dd');
+  if (!val && val !== 0) return '';
+  if (val instanceof Date) return Utilities.formatDate(val, getTZ(), 'yyyy-MM-dd');
   return String(val);
 }
 
