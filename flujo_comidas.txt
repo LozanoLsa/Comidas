@@ -1,0 +1,288 @@
+================================================================================
+  FLUJO: SISTEMA DE PEDIDOS - QUIERO MÁS+ / LO DE LA TARDE
+  Restaurante: Quiero Más+ | Horario: 12:00 - 3:00 PM
+  Actualizado: 2026-05-26
+================================================================================
+
+DECISIONES TÉCNICAS FINALES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Deadline pedidos  : 12:30 PM
+  Usuarios máx      : ~10 personas (puede variar día a día)
+  Salida comanda    : Pivote copia texto formateado → pega en WhatsApp
+  Notificaciones    : Telegram Bot (gratuito — recordatorios y faltantes)
+  Hosting inicial   : GitHub Pages → https://github.com/LozanoLsa/Comidas
+  Hosting futuro    : Servidor de empresa (migración simple)
+  Backend           : Google Apps Script + Google Sheets (gratuito)
+  Costo total       : $0.00 MXN
+
+FILOSOFÍA DE DISEÑO
+━━━━━━━━━━━━━━━━━━━
+  "El sistema hace el trabajo duro (recolectar y compilar).
+   El pivote hace el último metro (revisar y enviar)."
+
+  - Sin roles fijos de "pivote" en el sistema
+  - Sin login / autenticación
+  - Sin envío automático (humano siempre revisa antes)
+  - Cualquiera puede ser pivote abriendo la URL de comanda
+
+================================================================================
+ACTORES
+================================================================================
+
+  🍽️  Restaurante   → Quiero Más+ (WhatsApp: 811-530-93-05)
+  🔁  Pivote        → Cualquiera del pool de 4 que ese día tome el rol
+                      Solo necesita abrir /comanda, copiar y pegar en WhatsApp
+  👤  Usuarios      → Máximo ~10 personas (variable día a día)
+
+================================================================================
+FASE 0 — SETUP ÚNICO (una sola vez, al configurar el sistema)
+================================================================================
+
+  Menú estático programado en la app:
+
+  PLATILLOS FIJOS ($120 c/u):
+    1. Milanesa de Res
+    2. Milanesa de Pollo
+    3. Chiles Rellenos (carne y queso)
+    4. Enchiladas Suizas
+    5. Entomatadas
+    6. Asado / Picadillo
+
+  GUARNICIONES (elige 2 diferentes):
+    1. Arroz
+    2. Frijoles
+    3. Spaguetti
+    4. Puré
+    5. Nopales
+
+  INCLUYE: Entrada + Tortillas + Cubiertos + Salsa
+  EXTRA: Guarnición adicional $25
+
+  * Este menú NO cambia. Se programa una sola vez en config.js
+
+================================================================================
+FASE 1 — PUBLICAR PLATILLO DEL DÍA (~11:00 AM, L-V)
+================================================================================
+
+  RESPONSABLE: Pivote del día
+  TIEMPO: ~1 minuto
+
+  1. Pivote recibe platillo del día del restaurante (WhatsApp de siempre)
+  2. Pivote abre la app → sección "Hoy"
+  3. Escribe el nombre del platillo del día
+     Ej: "Cortadillo de Puerco al Chile Pasilla"
+  4. Toca [ PUBLICAR ] → Telegram notifica al grupo
+
+  ⚠️  F1 — Pivote no disponible:
+      Cualquiera del pool de 4 puede publicar. Misma URL, sin login.
+
+================================================================================
+FASE 2 — PEDIDOS DE USUARIOS (11:30 AM → 12:30 PM)
+================================================================================
+
+  RESPONSABLE: Cada usuario
+  TIEMPO: ~45 segundos
+
+  FORMULARIO (solo botones, nada que escribir):
+  ┌─────────────────────────────────────────────┐
+  │  🍽️ Tu pedido de hoy                        │
+  │                                             │
+  │  ¿Qué quieres?  (elige uno)                 │
+  │  [ Milanesa Res ] [ Milanesa Pollo ]         │
+  │  [ Chiles Rellenos ] [ Enchiladas Suizas ]   │
+  │  [ Entomatadas ] [ Asado/Picadillo ]         │
+  │  [ Platillo del día: Cortadillo... ]         │
+  │                                             │
+  │  Guarnición 1  (elige una)                  │
+  │  [ Arroz ] [ Frijoles ] [ Spaguetti ]        │
+  │  [ Puré ] [ Nopales ]                        │
+  │                                             │
+  │  Guarnición 2  (diferente a la 1)           │
+  │  [ Arroz ] [ Frijoles ] [ Spaguetti ]        │
+  │  [ Puré ] [ Nopales ]  ← se excluye la ya   │
+  │                           elegida           │
+  │  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─    │
+  │  Plan B  (opcional — si no hay lo tuyo)     │
+  │                                             │
+  │  Otro platillo: [ opciones ] / [ Da igual ] │
+  │  Otra guarnición: [ opciones ] / [ Da igual]│
+  │                                             │
+  │  [ ENVIAR MI PEDIDO ✅ ]                     │
+  └─────────────────────────────────────────────┘
+
+  NOTA PLAN B:
+    - Es opcional. Si no lo llenan → el pivote gestiona ese caso
+      manualmente (igual que hoy).
+    - Si lo llenan → el sistema sustituye solo, sin contactar a nadie.
+    - Opción "Da igual / Lo que haya" disponible para quien no quiera pensar.
+    - Solo 2 clicks extra. Sin presión.
+
+  ⚠️  F2 — Usuario no responde antes de las 12:30:
+      Telegram manda recordatorio a las 12:10 PM a quienes no han pedido.
+      A las 12:25 PM → alerta al pivote con lista de pendientes.
+
+  ⚠️  F3 — Pedido incorrecto:
+      IMPOSIBLE. Solo hay botones.
+
+  ⚠️  F4 — Pedido llega después de las 12:30:
+      Sistema cierra y marca como tardío. Pivote decide al ver la comanda.
+
+  ⚠️  F5 — Misma guarnición dos veces:
+      IMPOSIBLE. La app deshabilita la opción ya elegida en el paso 2.
+
+================================================================================
+FASE 3 — LA COMANDA (automático a las 12:30 PM)
+================================================================================
+
+  RESPONSABLE: Sistema compila → Pivote revisa y envía
+
+  1. A las 12:30 el sistema cierra la ventana de pedidos
+  2. Cualquiera del pool abre:  [URL]/comanda
+  3. Ve el resumen formateado listo para copiar:
+
+  ┌────────────────────────────────────────────────────┐
+  │  📋 COMANDA — QUIERO MÁS+                          │
+  │  Lunes 26 de Mayo · 10 pedidos                    │
+  │                                                    │
+  │  1. Ana     │ Milanesa de Res       │ Arroz+Frijol │
+  │  2. Juan    │ Platillo del Día      │ Puré+Nopales │
+  │  3. Carlos  │ Enchiladas Suizas     │ Arroz+Puré   │
+  │  4. ...                                            │
+  │  ─────────────────────────────────────────────────│
+  │  RESUMEN:                                          │
+  │  Milanesa de Res x2 · Enchiladas x3 · ...         │
+  │                                                    │
+  │  [ 📋 COPIAR COMANDA ]                             │
+  └────────────────────────────────────────────────────┘
+
+  4. Pivote toca [ COPIAR COMANDA ]
+  5. Abre WhatsApp → chat del restaurante → pega → edita si quiere → Enviar ✅
+
+  VENTAJAS DE ESTE DISEÑO:
+    ✓ Pivote siempre revisa antes de enviar
+    ✓ Puede agregar notas al restaurante
+    ✓ Puede corregir algo de último momento
+    ✓ Sin riesgo de envíos automáticos incorrectos
+    ✓ El restaurante recibe WhatsApp de siempre (nada cambia para ellos)
+
+  ⚠️  F6 — Error de transcripción:
+      IMPOSIBLE. La compilación es automática desde las selecciones.
+
+  ⚠️  F7 — Alguien no pidió:
+      La comanda muestra claramente "SIN PEDIDO" para esa persona.
+      Pivote decide al momento de revisar.
+
+================================================================================
+FASE 4 — FALTANTES (si el restaurante reporta un problema)
+================================================================================
+
+  RESPONSABLE: Restaurante avisa → Sistema actúa (si hay Plan B)
+                                  → Pivote gestiona (si no hay Plan B)
+
+  CASO A — Con Plan B definido (usuario llenó la sección opcional):
+    Restaurante: "No hay Enchiladas"
+    Sistema identifica afectados → sustituye con Plan B automáticamente
+    Pivote ve en la comanda: "Ana: Enchiladas → Milanesa (auto-cambiado)"
+    Pivote copia comanda actualizada → pega en WhatsApp → Enviar ✅
+    Nadie fue contactado.
+
+  CASO B — Sin Plan B (usuario eligió "Da igual" o no lo llenó):
+    Restaurante: "No hay Enchiladas"
+    Pivote notifica al usuario afectado (WhatsApp de siempre o Telegram)
+    Usuario responde → Pivote edita la comanda manualmente en la vista
+    Pivote copia y envía comanda actualizada
+
+  ⚠️  F8 — Usuario no responde el cambio:
+      Con Plan B → no existe este problema.
+      Sin Plan B → igual que hoy, pivote resuelve.
+
+  ⚠️  F9 — Backup también agotado:
+      Sistema lo detecta → pivote gestiona manualmente ese caso.
+
+  ⚠️  F10 — Varios afectados por el mismo faltante:
+      Con Plan B → sistema resuelve todos en paralelo, instantáneo.
+      Sin Plan B → pivote notifica a todos simultáneamente.
+
+================================================================================
+FASE 5 — ENTREGA
+================================================================================
+
+  Restaurante prepara y entrega.
+
+  ⚠️  F11 — Comida incorrecta:
+      Pivote tiene la comanda en la app como referencia para verificar.
+
+================================================================================
+TABLA RESUMEN DE MODOS DE FALLA
+================================================================================
+
+  ID  | Fase | Descripción                    | Estado con el sistema
+  ----|------|--------------------------------|------------------------
+  F1  |  1   | Pivote no disponible           | ✅ Cualquiera del pool
+  F2  |  2   | Usuario no responde            | ✅ Recordatorio automático
+  F3  |  2   | Pedido escrito incorrecto      | ✅ Imposible (solo botones)
+  F4  |  2   | Pedido tardío                  | ⚠️  Pivote decide al ver
+  F5  |  2   | Misma guarnición 2 veces       | ✅ Imposible (UI lo impide)
+  F6  |  3   | Error al transcribir           | ✅ Imposible (auto-compilado)
+  F7  |  3   | Alguien no pidió               | ⚠️  Visible en comanda
+  F8  |  4   | No responde cambio faltante    | ✅ Con Plan B / ⚠️ Sin él
+  F9  |  4   | Backup también agotado         | ⚠️  Pivote gestiona
+  F10 |  4   | Múltiples afectados            | ✅ Con Plan B (paralelo)
+  F11 |  5   | Comida incorrecta              | ⚠️  Comanda como referencia
+
+================================================================================
+TIMELINE DEL DÍA
+================================================================================
+
+  ~11:00 AM  Pivote publica el platillo del día (1 min)
+   11:30 AM  Telegram notifica al grupo
+   12:10 PM  Telegram recuerda a quienes no han pedido
+   12:25 PM  Alerta al pivote con lista de pendientes si quedan
+   12:30 PM  Sistema cierra y compila la comanda automáticamente
+   12:30 PM  Pivote abre /comanda → copia → pega en WhatsApp → envía (~1 min)
+  12:30+ PM  Restaurante confirma o notifica faltantes
+  [variable] Resolución de faltantes si aplica
+  12:00-3PM  Entrega
+
+================================================================================
+ARQUITECTURA TÉCNICA
+================================================================================
+
+  ARCHIVO          DESCRIPCIÓN
+  ──────────────── ────────────────────────────────────────────────────
+  index.html       Vista usuario — formulario de pedido (botones)
+  comanda.html     Vista pivote — resumen compilado + botón copiar
+  config.js        Menú estático + URL del backend (Apps Script)
+  style.css        Estilos (mobile-first, funciona en cel y laptop)
+  app.js           Lógica del formulario y comunicación con backend
+  backend/         Google Apps Script (guarda en Google Sheets)
+
+  HOSTING:
+    Actual  → GitHub Pages (gratis, deploy automático desde main)
+    Futuro  → Servidor empresa (copiar archivos, listo)
+
+  NOTIFICACIONES:
+    → Telegram Bot API (gratis)
+    → Recordatorio 12:10 PM a quienes no han pedido
+    → Alerta 12:25 PM al pivote si quedan pendientes
+
+  ENVÍO AL RESTAURANTE:
+    → Texto formateado en pantalla + botón "Copiar"
+    → Pivote pega en WhatsApp del restaurante manualmente
+    → Sin API, sin costo, sin riesgo de baneo
+
+================================================================================
+PRÓXIMOS PASOS — BUILD
+================================================================================
+
+  [x] Definir flujo completo ✅
+  [x] Tomar decisiones técnicas ✅
+  [x] Crear repositorio GitHub ✅ (LozanoLsa/Comidas)
+  [ ] Construir index.html (vista usuario)
+  [ ] Construir comanda.html (vista pivote)
+  [ ] Conectar Google Apps Script como backend
+  [ ] Crear Telegram Bot (BotFather, 5 min)
+  [ ] Deploy en GitHub Pages
+  [ ] Prueba con el equipo
+
+================================================================================
