@@ -19,8 +19,8 @@ const CONFIG = {
   platillos: [
     { id: "milanesa_res",      nombre: "Milanesa de Res",     precio: 120 },
     { id: "milanesa_pollo",    nombre: "Milanesa de Pollo",   precio: 120 },
-    { id: "chiles_carne",      nombre: "Chiles Rellenos Carne",  precio: 120 },
-    { id: "chiles_queso",      nombre: "Chiles Rellenos Queso",  precio: 120 },
+    { id: "chiles_carne",      nombre: "Chile Relleno de Carne", precio: 120 },
+    { id: "chiles_queso",      nombre: "Chile Relleno de Queso", precio: 120 },
     { id: "enchiladas_suizas", nombre: "Enchiladas Suizas",   precio: 120 },
     { id: "entomatadas",       nombre: "Entomatadas",         precio: 120 },
     { id: "asado_picadillo",   nombre: "Asado / Picadillo",   precio: 120 },
