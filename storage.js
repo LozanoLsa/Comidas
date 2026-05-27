@@ -14,7 +14,10 @@ const _cache = {
 // ── Comunicación con Apps Script ───────────────────────────────
 
 async function apiGet(action) {
-  const res  = await fetch(`${API_URL}?action=${action}`, { redirect: 'follow' });
+  const res  = await fetch(`${API_URL}?action=${action}`, {
+    credentials: 'omit',    // sin cookies → evita el flujo OAuth de Google
+    redirect:    'follow'
+  });
   const data = await res.json();
   if (!data.ok) throw new Error(data.error || 'Error en API GET ' + action);
   return data.data;
@@ -22,10 +25,11 @@ async function apiGet(action) {
 
 async function apiPost(body) {
   const res  = await fetch(API_URL, {
-    method:  'POST',
-    headers: { 'Content-Type': 'text/plain' },   // evita preflight CORS
-    body:    JSON.stringify(body),
-    redirect: 'follow'
+    method:      'POST',
+    headers:     { 'Content-Type': 'text/plain' },  // evita preflight CORS
+    body:        JSON.stringify(body),
+    credentials: 'omit',
+    redirect:    'follow'
   });
   const data = await res.json();
   if (!data.ok) throw new Error(data.error || 'Error en API POST ' + body.action);
