@@ -236,22 +236,60 @@ async function init() {
   }
 
   // ── Editar platillo del día ──
-  $('btn-editar-dia').addEventListener('click', async () => {
+  $('btn-editar-dia').addEventListener('click', () => {
+    // Mostrar panel de confirmación en vez de actuar directo
+    $('editar-confirm').style.display = 'block';
+    $('btn-editar-dia').style.display = 'none';
+  });
+
+  $('btn-cancelar-editar').addEventListener('click', () => {
+    $('editar-confirm').style.display = 'none';
+    $('btn-editar-dia').style.display = '';
+  });
+
+  // Solo corregir el platillo — mantiene los pedidos existentes
+  $('btn-solo-editar').addEventListener('click', async () => {
     const pd = Storage.getPlatilloDelDia();
-    const btnEditar = $('btn-editar-dia');
-    btnEditar.disabled = true;
+    $('btn-solo-editar').disabled = true;
+    $('btn-solo-editar').textContent = '⏳ Un momento…';
     try {
       await Storage.clearPlatilloDelDia();
     } catch (err) {
       alert('❌ No se pudo editar. Intenta de nuevo.');
-      btnEditar.disabled = false;
+      $('btn-solo-editar').disabled = false;
+      $('btn-solo-editar').textContent = '✏️ Solo corregir el platillo';
       return;
     }
+    $('editar-confirm').style.display = 'none';
+    $('btn-editar-dia').style.display = '';
     $('input-dia').value = pd?.nombre || '';
     $('btn-publicar').disabled = false;
     renderTodo();
     $('input-dia').focus();
-    btnEditar.disabled = false;
+    $('btn-solo-editar').disabled = false;
+    $('btn-solo-editar').textContent = '✏️ Solo corregir el platillo';
+  });
+
+  // Reiniciar día completo — borra platillo + todos los pedidos
+  $('btn-reiniciar-dia').addEventListener('click', async () => {
+    $('btn-reiniciar-dia').disabled = true;
+    $('btn-reiniciar-dia').textContent = '⏳ Limpiando…';
+    try {
+      await Storage.clearAll();
+    } catch (err) {
+      alert('❌ No se pudo reiniciar. Intenta de nuevo.');
+      $('btn-reiniciar-dia').disabled = false;
+      $('btn-reiniciar-dia').textContent = '🔄 Reiniciar día completo';
+      return;
+    }
+    $('editar-confirm').style.display = 'none';
+    $('btn-editar-dia').style.display = '';
+    $('input-dia').value = '';
+    $('btn-publicar').disabled = true;
+    renderTodo();
+    $('input-dia').focus();
+    $('btn-reiniciar-dia').disabled = false;
+    $('btn-reiniciar-dia').textContent = '🔄 Reiniciar día completo';
   });
 
   // ── Refresh manual ──

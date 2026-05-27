@@ -2,58 +2,135 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8"/>
-  <title>Limpiar datos — Comidas</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Liberar dispositivo — ITS Pedidos</title>
   <style>
-    body { font-family: sans-serif; display:flex; align-items:center; justify-content:center;
-           min-height:100vh; margin:0; background:#f2f2f2; }
-    .box { background:#fff; border-radius:8px; padding:40px 48px; text-align:center;
-           box-shadow:0 2px 16px rgba(0,0,0,0.1); max-width:420px; }
-    h2  { margin:0 0 12px; color:#202020; }
-    p   { color:#666; font-size:14px; line-height:1.6; }
-    pre { background:#f9f9f9; border:1px solid #ddd; border-radius:4px;
-          padding:12px; font-size:12px; text-align:left; margin:16px 0; }
-    .ok  { color:#2d7a3a; font-weight:700; font-size:18px; margin-top:16px; }
-    .err { color:#C41E3A; font-weight:700; }
-    a   { color:#C41E3A; font-size:13px; }
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      display: flex; align-items: center; justify-content: center;
+      min-height: 100vh; margin: 0;
+      background: #f2f2f2;
+    }
+    .box {
+      background: #fff; border-radius: 12px;
+      padding: 36px 40px; text-align: center;
+      box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+      max-width: 440px; width: 90%;
+    }
+    .emoji { font-size: 48px; display: block; margin-bottom: 12px; }
+    h2  { margin: 0 0 8px; color: #202020; font-size: 20px; }
+    .subtitulo { color: #888; font-size: 13px; margin: 0 0 24px; }
+
+    .info-box {
+      background: #f0f9ff;
+      border: 1px solid #bae6fd;
+      border-radius: 8px;
+      padding: 14px 16px;
+      text-align: left;
+      margin-bottom: 20px;
+    }
+    .info-box p { margin: 0 0 6px; font-size: 13px; color: #0369a1; line-height: 1.55; }
+    .info-box p:last-child { margin: 0; }
+    .info-box strong { color: #0c4a6e; }
+
+    .warning-box {
+      background: #fff7ed;
+      border: 1px solid #fed7aa;
+      border-radius: 8px;
+      padding: 14px 16px;
+      text-align: left;
+      margin-bottom: 24px;
+    }
+    .warning-box p { margin: 0; font-size: 13px; color: #9a3412; line-height: 1.55; }
+
+    .btn-limpiar {
+      width: 100%;
+      background: #C41E3A; color: #fff;
+      border: none; border-radius: 8px;
+      padding: 13px; font-size: 15px; font-weight: 700;
+      cursor: pointer; font-family: inherit;
+      transition: background .2s;
+      margin-bottom: 16px;
+    }
+    .btn-limpiar:hover  { background: #a31830; }
+    .btn-limpiar:disabled { background: #ccc; cursor: not-allowed; }
+
+    .resultado {
+      font-size: 13px; color: #444;
+      background: #f9f9f9; border: 1px solid #eee;
+      border-radius: 6px; padding: 12px;
+      text-align: left; font-family: monospace;
+      display: none; margin-bottom: 16px;
+      white-space: pre-wrap; line-height: 1.6;
+    }
+    .ok  { color: #15803d; font-weight: 700; font-size: 15px; }
+    .links { font-size: 13px; }
+    .links a { color: #C41E3A; text-decoration: none; }
+    .links a:hover { text-decoration: underline; }
   </style>
 </head>
 <body>
 <div class="box">
-  <h2>🗑️ Limpiador de datos</h2>
-  <p>Borra todas las claves <code>qm_*</code> del localStorage de esta app.</p>
-  <pre id="log">Ejecutando…</pre>
-  <div id="resultado"></div>
-  <br>
-  <a href="pivote.html">← Volver al Enlace</a>
-  &nbsp;|&nbsp;
-  <a href="index.html">← Ir al Inicio</a>
+  <span class="emoji">🔓</span>
+  <h2>Liberar este dispositivo</h2>
+  <p class="subtitulo">Herramienta para el Enlace · ITS Pedidos</p>
+
+  <div class="info-box">
+    <p>✅ <strong>¿Para qué sirve esto?</strong></p>
+    <p>Para que otra persona pueda hacer su pedido desde <strong>este mismo celular o computadora</strong>.</p>
+    <p>También sirve si la app "recuerda" un nombre equivocado o quedó bloqueada en un usuario.</p>
+  </div>
+
+  <div class="warning-box">
+    <p>⚠️ <strong>¿Qué NO hace?</strong><br>
+    Esta herramienta <strong>no borra los pedidos del servidor</strong> ni el menú del día.
+    Los pedidos de todos los demás siguen intactos en Google Sheets.
+    Solo "olvida" el usuario de este dispositivo.</p>
+  </div>
+
+  <button class="btn-limpiar" id="btn-limpiar" onclick="limpiar()">
+    🔓 Liberar este dispositivo
+  </button>
+
+  <div class="resultado" id="resultado"></div>
+
+  <div class="links">
+    <a href="pivote.html">← Vista del Enlace</a>
+    &nbsp;·&nbsp;
+    <a href="pedidos.html">← Hacer pedido</a>
+  </div>
 </div>
 
 <script>
-  const log  = document.getElementById('log');
-  const res  = document.getElementById('resultado');
+  function limpiar() {
+    const btn = document.getElementById('btn-limpiar');
+    const res = document.getElementById('resultado');
 
-  try {
-    const todas   = Object.keys(localStorage);
-    const aBorrar = todas.filter(k => k.startsWith('qm_'));
+    btn.disabled = true;
+    btn.textContent = '⏳ Liberando…';
 
-    if (aBorrar.length === 0) {
-      log.textContent = 'No había claves qm_* — ya estaba limpio.';
-    } else {
-      aBorrar.forEach(k => localStorage.removeItem(k));
-      log.textContent = 'Claves borradas:\n' + aBorrar.map(k => '  ✓ ' + k).join('\n');
+    try {
+      const todas   = Object.keys(localStorage);
+      const aBorrar = todas.filter(k => k.startsWith('qm_'));
+
+      if (aBorrar.length === 0) {
+        res.textContent = 'ℹ️ Este dispositivo ya estaba libre.\nNo había datos guardados.';
+      } else {
+        aBorrar.forEach(k => localStorage.removeItem(k));
+        res.textContent = '✓ Borrado:\n' + aBorrar.map(k => '  · ' + k).join('\n');
+      }
+
+      res.style.display = 'block';
+      btn.textContent   = '✅ Dispositivo liberado';
+      btn.style.background = '#15803d';
+
+    } catch(e) {
+      res.textContent = 'Error: ' + e.message;
+      res.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = '🔓 Liberar este dispositivo';
     }
-
-    // Verificar que quedó limpio
-    const restantes = Object.keys(localStorage).filter(k => k.startsWith('qm_'));
-    if (restantes.length === 0) {
-      res.innerHTML = '<div class="ok">✅ localStorage limpio</div>';
-    } else {
-      res.innerHTML = '<div class="err">⚠️ Aún quedan: ' + restantes.join(', ') + '</div>';
-    }
-  } catch(e) {
-    log.textContent = 'Error: ' + e.message;
-    res.innerHTML = '<div class="err">Verifica que estás abriendo desde el mismo origen.</div>';
   }
 </script>
 </body>
