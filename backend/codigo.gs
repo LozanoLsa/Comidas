@@ -26,7 +26,11 @@ function getFecha() {
  */
 function toFechaStr(val) {
   if (!val && val !== 0) return '';
-  if (val instanceof Date) return Utilities.formatDate(val, getTZ(), 'yyyy-MM-dd');
+  // Apps Script: los Date de getValues() no pasan instanceof Date
+  // pero sí tienen el método getTime — usamos duck typing
+  if (typeof val === 'object' && typeof val.getTime === 'function') {
+    return Utilities.formatDate(val, getTZ(), 'yyyy-MM-dd');
+  }
   return String(val);
 }
 
