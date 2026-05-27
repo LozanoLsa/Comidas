@@ -32,7 +32,8 @@ const CONFIG = {
     { id: "frijoles",  nombre: "Frijoles"  },
     { id: "spaguetti", nombre: "Spaguetti" },
     { id: "pure",      nombre: "Puré"      },
-    { id: "nopales",   nombre: "Nopales"   }
+    { id: "nopales",   nombre: "Nopales"   },
+    { id: "ensalada",  nombre: "Ensalada"  }
   ],
 
   bebidas: [
