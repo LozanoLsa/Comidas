@@ -9,9 +9,10 @@ const CONFIG = {
     whatsapp: "528115309305"          // número completo con lada
   },
 
-  apertura:  { hora: 10, minuto:  0 }, // 10:00 AM — abre la ventana
-  deadline:  { hora: 12, minuto: 30 }, // 12:30 PM — cierra la ventana
+  apertura:     { hora: 10, minuto:  0 }, // 10:00 AM — abre la ventana
+  deadline:     { hora: 12, minuto: 30 }, // 12:30 PM — cierra la ventana
   recordatorio: { hora: 12, minuto: 10 },
+  horaEntrega:  "1:45",                  // hora de entrega del restaurante
 
   // ⚠️ MODO PRUEBAS — cambiar a false en producción
   testMode: true,   // true = ignora el deadline (siempre abierto)
