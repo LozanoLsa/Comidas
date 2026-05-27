@@ -94,33 +94,41 @@ function generarTextoRestaurante() {
   });
   const fecha = hoy.charAt(0).toUpperCase() + hoy.slice(1);
 
-  let txt = `Pedido ITS — ${fecha}\n\n`;
-
-  // Un bloque por pedido, en el formato del owner
-  pedidos.forEach((p, i) => {
-    const n = i + 1;
-    // Guarniciones: "Arroz y Frijoles" (o solo una si son iguales)
-    const guarns = p.g1.id === p.g2.id
-      ? p.g1.nombre
-      : `${p.g1.nombre} y ${p.g2.nombre}`;
-    const sinSopa = p.sopa === false ? ' (sin sopa)' : '';
-
-    txt += `🔺 Platillo${n}: ${p.platillo.nombre}\n`;
-    txt += `🔺 Guarniciones${n}: ${guarns}${sinSopa}\n\n`;
+  // Agrupar por combinación platillo + guarniciones
+  const cuentas = {};
+  pedidos.forEach(p => {
+    const clave = `${p.platillo.nombre} + ${p.g1.nombre} + ${p.g2.nombre}`;
+    cuentas[clave] = (cuentas[clave] || 0) + 1;
   });
 
-  // Bebidas agrupadas
+  // Agrupar bebidas
   const bebidas = {};
   pedidos.forEach(p => {
     if (p.bebida) bebidas[p.bebida.nombre] = (bebidas[p.bebida.nombre] || 0) + 1;
   });
+
+  // Contar sin sopa
+  const sinSopaCount = pedidos.filter(p => p.sopa === false).length;
+
+  let txt = `Buenas tardes 🍽️ Pedido ITS — ${fecha}\n\n`;
+
+  Object.entries(cuentas).forEach(([combo, n]) => {
+    txt += `${n} ${combo}\n`;
+  });
+
+  txt += '\n';
+
   if (Object.keys(bebidas).length > 0) {
-    const bebTxt = Object.entries(bebidas)
-      .map(([beb, n]) => `${n} ${beb}`).join(', ');
+    const bebTxt = Object.entries(bebidas).map(([beb, n]) => `${n} ${beb}`).join(', ');
     txt += `🔺 Bebidas: ${bebTxt}\n`;
   }
 
-  txt += `🔺 Hora: ${CONFIG.horaEntrega || '1:30'}`;
+  if (sinSopaCount > 0) {
+    txt += `🔺 Sin sopa: ${sinSopaCount}\n`;
+  }
+
+  txt += `🔺 Hora: ${CONFIG.horaEntrega || '1:45'}\n`;
+  txt += `\nMuchas gracias, que tengan excelente día! 🙏`;
 
   return txt;
 }
