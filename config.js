@@ -29,12 +29,13 @@ const CONFIG = {
   ],
 
   guarniciones: [
-    { id: "arroz",     nombre: "Arroz"     },
-    { id: "frijoles",  nombre: "Frijoles"  },
-    { id: "spaguetti", nombre: "Spaguetti" },
-    { id: "pure",      nombre: "Puré"      },
-    { id: "nopales",   nombre: "Nopales"   },
-    { id: "ensalada",  nombre: "Ensalada"  }
+    { id: "arroz",         nombre: "Arroz"                  },
+    { id: "frijoles",      nombre: "Frijoles"               },
+    { id: "spaguetti",     nombre: "Spaguetti"              },
+    { id: "pure",          nombre: "Puré"                   },
+    { id: "nopales",       nombre: "Nopales"                },
+    { id: "ensalada",      nombre: "Ensalada"               },
+    { id: "panela_plancha", nombre: "Queso Panela a la Plancha" }
   ],
 
   bebidas: [
