@@ -284,6 +284,15 @@ img { max-width: 100%; display: block; }
   cursor: not-allowed;
   box-shadow: none;
 }
+/* ── Platillos en lista vertical numerada ────────────────── */
+#grid-platillos {
+  flex-direction: column;
+}
+#grid-platillos .option-btn {
+  width: 100%;
+  text-align: left;
+}
+
 .option-btn .opt-num {
   display: inline-block;
   font-size: 11px;
