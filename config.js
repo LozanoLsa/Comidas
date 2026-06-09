@@ -25,7 +25,8 @@ const CONFIG = {
     { id: "enchiladas_suizas", nombre: "Enchiladas Suizas",   precio: 120 },
     { id: "entomatadas",       nombre: "Entomatadas",         precio: 120 },
     { id: "asado_picadillo",   nombre: "Asado / Picadillo",   precio: 120 },
-    { id: "pollo_plancha",     nombre: "Pollo a la Plancha",  precio: 120 }
+    { id: "pollo_condimentado",   nombre: "Pollo a la Plancha Condimentado",  precio: 120 },
+    { id: "pollo_sin_condimento", nombre: "Pollo a la Plancha Sin Condimento", precio: 120 }
   ],
 
   guarniciones: [
