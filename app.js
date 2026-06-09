@@ -47,12 +47,12 @@ function platillosDelDia() {
 }
 
 // ── Render botones ────────────────────────────────────────────
-function renderBotones(containerId, items, selectedId, onSelect, disabledIds = []) {
+function renderBotones(containerId, items, selectedId, onSelect, disabledIds = [], opts = {}) {
   const container = $(containerId);
   if (!container) return;
   container.innerHTML = '';
 
-  items.forEach(item => {
+  items.forEach((item, idx) => {
     const btn = document.createElement('button');
     btn.className = 'option-btn' + (item.id === selectedId ? ' selected' : '');
     btn.dataset.id = item.id;
@@ -60,10 +60,11 @@ function renderBotones(containerId, items, selectedId, onSelect, disabledIds = [
     if (item.esDelDia) {
       btn.classList.add('option-btn--dia');
       btn.innerHTML = `<span>${item.nombre}</span><span class="dia-badge-tag">⭐ Hoy</span>`;
-    } else if (item.nota) {
-      btn.innerHTML = `${item.nombre}<span class="nota">${item.nota}</span>`;
     } else {
-      btn.textContent = item.nombre;
+      const numHtml   = opts.numerado ? `<span class="opt-num">${idx + 1}</span>` : '';
+      const nuevoHtml = item.nuevo    ? `<span class="opt-nuevo">✨ Nuevo</span>` : '';
+      const notaHtml  = item.nota     ? `<span class="nota">${item.nota}</span>`  : '';
+      btn.innerHTML = `${numHtml}${item.nombre}${notaHtml}${nuevoHtml}`;
     }
 
     if (disabledIds.includes(item.id)) btn.disabled = true;
@@ -80,7 +81,7 @@ function renderForm() {
     state.platillo = item;
     if (state.planB.platillo?.id === item.id) state.planB.platillo = null;
     renderForm();
-  });
+  }, [], { numerado: true });
 
   renderBotones('grid-g1', CONFIG.guarniciones, state.g1?.id, item => {
     state.g1 = item;
